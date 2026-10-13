@@ -192,24 +192,34 @@ python -m pip install akshare
 > 左下角那个人像图标「使用 GitHub 登录」，是给**设置同步**和 Copilot 用的，
 > **和推代码是两回事**。现在完全不用管它，点了反而会卡在跳转。
 
-## 六、现在的进度，和唯一剩下的事
-
-### 已完成
+## 六、已完成 —— 代码上 GitHub 了
 
 | 项目 | 状态 |
 | --- | --- |
-| 本地仓库 | 有提交，署名 `halen-cpu / 13377618515@189.cn` |
-| 远端地址 | 已配好 `git@github.com:halen-cpu/python-learning.git` |
-| SSH 密钥 + 443 通道 | 已配好，`ssh.github.com:443` 实测握手成功 |
+| 本地仓库 | 3 个提交 |
+| GitHub 仓库 | 已建 → `github.com/halen-cpu/python-learning` |
+| SSH 认证 | 通过（`Hi halen-cpu! You've successfully authenticated`） |
+| 代码推送 | 已推送，本地与远端哈希完全一致 |
 
-### 卡在这两步（都必须在 GitHub 网页上做）
+### 以后怎么把新代码传上去（就 3 条命令）
 
-1. **仓库还没建** —— 查 API，`halen-cpu/python-learning` 返回 **404**
-2. **SSH 公钥还没贴** —— `ssh -T git@github.com` 返回 **`Permission denied (publickey)`**
+```cmd
+cd C:\Users\13377\python-learning
+git add -A
+git commit -m "这次改了什么"
+git push
+```
 
-这两件事一做完，我把代码推上去就是一条命令的事。
+**更省事的办法（在 VS Code 里点鼠标）**：
 
-公钥那串字符在 `04_GitHub上手.md` 里，直接复制。
+1. 左侧那个**像树枝分叉的图标**（源代码管理）
+2. 改过的文件会列在里面 → 上方输入框写一句说明
+3. 点 **✓ 提交** → 再点 **同步更改**（那个转圈的箭头）
+
+效果和敲命令完全一样。
+
+> **重点**：`push` 走 SSH 通道，**不需要网页、不需要加速器**。
+> 你网络对 github.com 那点毛病，以后完全不影响你交代码。
 
 ### 然后就开始学
 

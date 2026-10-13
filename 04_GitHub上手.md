@@ -171,20 +171,27 @@ git push                           # 推到 GitHub
 | 配好 443 端口转发 | `C:\Users\13377\.ssh\config` —— 让 `git@github.com` 自动走 `ssh.github.com:443` |
 | 本地仓库远端设为 SSH | `origin = git@github.com:halen-cpu/python-learning.git` |
 
-**你只差一步**：把下面这串**公钥**贴到 GitHub（开加速器登录网页后操作）：
+**这一步已经完成（2026-10-13 23:29 验证通过）** —— 公钥已贴到 GitHub，
+`ssh -T git@github.com` 返回 `Hi halen-cpu! You've successfully authenticated`。
+
+**以后想确认这条通道还正常**，在桌面「Git Bash」里敲：
+
+```bash
+ssh -T git@github.com
+```
+
+| 看到什么 | 含义 |
+| --- | --- |
+| `Hi halen-cpu! You've successfully authenticated` | ✓ 正常，可以直接 push |
+| `Permission denied (publickey)` | 公钥失效了，需要重新贴 |
+
+**好处**：`git push` / `git pull` **不用开加速器、不需要网页**，只有打开 github.com 网页才需要。
+
+公钥内容（备份留档，用不到就别动）：
 
 ```
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGYcA8DiMIEPKerhztiqUQX55SWg6SuKPlF53ZYwsFS6 13377618515@189.cn
 ```
-
-路径：**github.com → 右上角头像 → Settings → SSH and GPG keys → New SSH key**
-→ Title 随便填（比如「我的笔记本」）→ Key 粘贴上面那串 → **Add SSH key**
-
-**怎么验证成没成**：在桌面「Git Bash」里敲 `ssh -T git@github.com`
-→ 看到 `Hi halen-cpu! You've successfully authenticated...` 就成了
-→ 看到 `Permission denied (publickey)` = 公钥还没加上去
-
-**好处**：配好之后 `git push` / `git pull` **不用开加速器**，只有打开网页才需要。
 
 ### 看到「本网站访问受限，请联系客服」怎么办
 
