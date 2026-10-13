@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python 学习面板</title>
+<style>
+  :root{
+    --bg:#f4f7fc; --card:#ffffff; --line:#e4eaf4; --line-strong:#d3dcec;
+    --text:#1b2436; --muted:#7b889f; --faint:#a9b4c7;
+    --primary:#3b6ef5; --primary-d:#2c58d6; --primary-soft:#eaf0ff;
+    --green:#12b886; --orange:#ff8a3d; --red:#ef4d4d;
+    --r:14px; --mono:"Cascadia Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:14px/1.65 -apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line-strong);background:#fff;color:var(--text);
+    padding:8px 14px;border-radius:10px;font-size:13.5px;transition:.15s}
+  button:hover{border-color:var(--primary);color:var(--primary)}
+  button.primary{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+  button.primary:hover{background:var(--primary-d);border-color:var(--primary-d);color:#fff}
+  button.ghost{border-color:transparent;color:var(--muted)}
+  button.ghost:hover{background:var(--primary-soft);color:var(--primary)}
+  button.danger{border-color:transparent;color:var(--red)}
+  button.danger:hover{background:#fdecec;border-color:#f7c4c4}
+  button.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+  input,textarea{font-family:inherit;font-size:14px;color:var(--text);background:#fff;
+    border:1px solid var(--line-strong);border-radius:10px;padding:9px 12px;outline:none;transition:.15s}
+  input:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,110,245,.12)}
+  ::placeholder{color:var(--faint)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 26px 60px}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;gap:14px;padding:6px 0 20px;flex-wrap:wrap}
+  .brand{font-size:20px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:9px}
+  .brand .bolt{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#3b6ef5,#7a5cf0);
+    color:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 4px 12px rgba(59,110,245,.32)}
+  .brand small{font-weight:500;font-size:12.5px;color:var(--muted);margin-left:2px}
+  .hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  #todayChip{font-size:12.5px;color:var(--muted);background:#fff;border:1px solid var(--line);
+    padding:6px 12px;border-radius:20px}
+  #modeChip{font-size:11.5px;padding:4px 9px;border-radius:20px;background:#eef2f9;color:var(--muted);
+    border:1px solid var(--line)}
+
+  /* ---------- stats ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+  .stat .num{font-size:30px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+  .stat .num span{font-size:14px;font-weight:600;color:var(--muted);margin-left:3px}
+  .stat .lbl{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .stat.hot{background:linear-gradient(135deg,#fff6ef,#fff);border-color:#ffdfc7}
+  .stat.hot .num{color:var(--orange)}
+  .stat.acc .num{color:var(--primary)}
+  .stat.ok .num{color:var(--green)}
+
+  /* ---------- card ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .card-hd{font-weight:650;font-size:14.5px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .card-hd .sub{font-weight:400;font-size:12.5px;color:var(--muted)}
+
+  /* ---------- checkin ---------- */
+  .checkin{margin-bottom:16px}
+  .checkin-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .checkin-row label{font-size:13.5px;color:var(--muted)}
+  #minInput{width:96px;text-align:center;font-weight:600}
+  .quick{display:flex;gap:6px}
+  .quick button{padding:5px 11px;font-size:12.5px;border-radius:8px;color:var(--muted)}
+  .done-tag{font-size:12.5px;color:var(--green);background:#e8f8f2;border:1px solid #c6ecdd;
+    padding:4px 10px;border-radius:20px;font-weight:600}
+
+  /* ---------- heatmap ---------- */
+  .heat-wrap{border-top:1px dashed var(--line);padding-top:16px}
+  .heat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .heat-top .t{font-size:12.5px;color:var(--muted)}
+  .legend{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--faint)}
+  .cell{width:13px;height:13px;border-radius:3.5px;background:#edf1f8}
+  .cell.l0{background:#edf1f8}
+  .cell.l1{background:#c3d8fd}
+  .cell.l2{background:#7fa9fa}
+  .cell.l3{background:#4b81f0}
+  .cell.l4{background:#2c58d6}
+  .cell.empty{background:transparent}
+  #heatmap{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;grid-auto-columns:13px;
+    gap:3.5px;overflow-x:auto;padding-bottom:4px}
+
+  /* ---------- notes ---------- */
+  .notes{display:grid;grid-template-columns:308px 1fr;gap:16px;align-items:start}
+  .note-list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    display:flex;flex-direction:column;height:660px;overflow:hidden}
+  .list-hd{display:flex;gap:8px;padding:14px;border-bottom:1px solid var(--line)}
+  .list-hd input{flex:1;min-width:0;padding:7px 11px;font-size:13px}
+  .list-hd button{white-space:nowrap}
+  #noteItems{flex:1;overflow-y:auto;padding:8px}
+  .ni{padding:11px 13px;border-radius:10px;cursor:pointer;margin-bottom:3px;border:1px solid transparent}
+  .ni:hover{background:#f7f9fd}
+  .ni.on{background:var(--primary-soft);border-color:#cfdffd}
+  .ni .t{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ni.on .t{color:var(--primary-d)}
+  .ni .m{font-size:11.5px;color:var(--faint);margin-top:3px;display:flex;gap:8px;align-items:center}
+  .chip{background:#eef2f9;color:var(--muted);border-radius:6px;padding:1px 6px;font-size:10.5px}
+  .ni .sum{font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .empty-tip{padding:40px 20px;text-align:center;color:var(--faint);font-size:13px;line-height:2}
+
+  .editor{height:660px;display:flex;flex-direction:column;padding:0;overflow:hidden}
+  .ed-hd{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .ed-hd-row{display:flex;gap:8px;align-items:center}
+  #noteTitle{border:none;padding:2px 0;font-size:17px;font-weight:700;flex:1;box-shadow:none!important}
+  #noteTitle:focus{box-shadow:none}
+  #noteTags{border:none;padding:0;font-size:12.5px;color:var(--muted);width:200px;box-shadow:none!important}
+  .ed-hd-row2{display:flex;gap:8px;align-items:center}
+  .ed-shell{flex:1;display:flex;min-height:0}
+  #noteBody{flex:1;border:none;border-radius:0;resize:none;padding:16px 18px;font-family:var(--mono);
+    font-size:13.5px;line-height:1.8;background:#fcfdff;box-shadow:none!important}
+  .preview{flex:1;overflow-y:auto;padding:16px 20px;display:none}
+  .preview.show{display:block}
+  .ed-shell.split #noteBody{border-right:1px solid var(--line)}
+  .ed-shell.split .preview{display:block}
+  #saveState{font-size:12px;color:var(--faint);margin-right:auto}
+
+  /* ---------- markdown ---------- */
+  .md h1,.md h2,.md h3,.md h4,.md h5,.md h6{margin:1.1em 0 .5em;line-height:1.35;font-weight:700}
+  .md h1{font-size:21px}.md h2{font-size:18px}.md h3{font-size:16px}.md h4{font-size:14.5px}
+  .md h1,.md h2{border-bottom:1px solid var(--line);padding-bottom:.3em}
+  .md p{margin:.6em 0}
+  .md ul,.md ol{margin:.6em 0;padding-left:1.5em}
+  .md li{margin:.22em 0}
+  .md code{background:#eef2fa;color:#c0392b;padding:1.5px 6px;border-radius:5px;font-family:var(--mono);font-size:12.8px}
+  .md pre{background:#1e2534;color:#e6edf7;padding:13px 15px;border-radius:10px;overflow-x:auto;margin:.8em 0}
+  .md pre code{background:none;color:inherit;padding:0;font-size:12.8px;line-height:1.7}
+  .md blockquote{margin:.7em 0;padding:.35em 1em;border-left:3px solid #cfdffd;background:#f7faff;color:#5a6b85;border-radius:0 8px 8px 0}
+  .md a{color:var(--primary);text-decoration:none;border-bottom:1px solid #cfdffd}
+  .md hr{border:none;border-top:1px solid var(--line);margin:1.3em 0}
+  .md strong{font-weight:700}
+
+  /* ---------- toast ---------- */
+  #toast{position:fixed;left:50%;bottom:36px;transform:translate(-50%,20px);background:#1e2534;color:#fff;
+    padding:11px 22px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;
+    box-shadow:0 10px 30px rgba(24,34,54,.3);z-index:99}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:1000px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .notes{grid-template-columns:1fr}
+    .note-list,.editor{height:auto}
+    #noteItems{max-height:280px}
+    .ed-shell{min-height:420px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand"><span class="bolt">⚡</span>Python 学习面板 <small>by 小微</small></div>
+    <div class="hdr-right">
+      <span id="modeChip">连接中…</span>
+      <span id="todayChip"></span>
+      <button class="ghost sm" id="btnExport">导出备份</button>
+      <button class="ghost sm" id="btnImport">导入备份</button>
+      <button class="ghost sm" id="btnExportMd">笔记导出 MD</button>
+      <input type="file" id="fileImport" accept=".json" hidden>
+    </div>
+  </header>
+
+  <!-- 统计 -->
+  <section class="stats">
+    <div class="stat hot"><div class="num" id="sStreak">0<span>天</span></div><div class="lbl">连续打卡</div></div>
+    <div class="stat acc"><div class="num" id="sDays">0<span>天</span></div><div class="lbl">累计学习天数</div></div>
+    <div class="stat ok"><div class="num" id="sHours">0<span>h</span></div><div class="lbl">累计学习时长</div></div>
+    <div class="stat"><div class="num" id="sNotes">0<span>篇</span></div><div class="lbl">笔记总量</div></div>
+  </section>
+
+  <!-- 打卡 -->
+  <section class="card checkin">
+    <div class="card-hd">今日打卡 <span class="sub" id="checkinHint"></span></div>
+    <div class="checkin-row">
+      <label>今天学了</label>
+      <input type="number" id="minInput" min="0" step="5" placeholder="分钟">
+      <label style="color:var(--faint)">分钟</label>
+      <div class="quick">
+        <button data-min="30">30</button><button data-min="60">60</button>
+        <button data-min="90">90</button><button data-min="120">120</button>
+      </div>
+      <button class="primary" id="btnCheckin">今天学了，打卡</button>
+      <span id="doneTag" class="done-tag" hidden></span>
+    </div>
+    <div class="heat-wrap">
+      <div class="heat-top">
+        <span class="t">最近 26 周学习热力图</span>
+        <div class="legend">少 <span class="cell l1"></span><span class="cell l2"></span><span class="cell l3"></span><span class="cell l4"></span> 多</div>
+      </div>
+      <div id="heatmap"></div>
+    </div>
+  </section>
+
+  <!-- 笔记 -->
+  <section class="notes">
+    <aside class="note-list">
+      <div class="list-hd">
+        <input id="search" placeholder="搜索标题 / 内容 / 标签">
+        <button class="primary sm" id="btnNew">＋ 新建</button>
+      </div>
+      <div id="noteItems"></div>
+    </aside>
+
+    <div class="card editor">
+      <div class="ed-hd">
+        <div class="ed-hd-row">
+          <input id="noteTitle" placeholder="笔记标题">
+          <button class="ghost sm" id="btnSplit">分栏预览</button>
+          <button class="danger sm" id="btnDelete">删除</button>
+        </div>
+        <div class="ed-hd-row2">
+          <input id="noteTags" placeholder="标签，逗号分隔">
+          <span id="noteDate" style="font-size:12px;color:var(--faint)"></span>
+          <span id="saveState"></span>
+        </div>
+      </div>
+      <div class="ed-shell" id="edShell">
+        <textarea id="noteBody" spellcheck="false" placeholder="用 Markdown 写笔记，右边实时预览：&#10;&#10;# 一级标题&#10;## 二级标题&#10;- 列表项&#10;**重点加粗**&#10;`行内代码`&#10;```&#10;代码块&#10;```&#10;> 引用"></textarea>
+        <div class="preview md" id="notePreview"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   数据层：优先用本地 Python 服务存 study_data.json；
+   如果直接双击本文件打开（没有服务），自动降级用浏览器存储。
+   ========================================================= */
+const LS_KEY = 'py_study_panel_v1';
+let MODE = 'local';
+let DB = { version: 1, sessions: {}, notes: [] };
+let curId = null;
+let saveTimer = null;
+
+async function init() {
+  try {
+    const r = await fetch('/api/ping', { cache: 'no-store' });
+    const j = await r.json();
+    if (j.ok) MODE = 'file';
+  } catch (e) { MODE = 'local'; }
+
+  if (MODE === 'file') {
+    document.getElementById('modeChip').textContent = '● 文件模式 · study_data.json';
+    try {
+      const r = await fetch('/api/data', { cache: 'no-store' });
+      DB = normalize(await r.json());
+    } catch (e) { toast('读取数据失败'); }
+  } else {
+    document.getElementById('modeChip').textContent = '● 浏览器存储模式';
+    try { DB = normalize(JSON.parse(localStorage.getItem(LS_KEY)) || {}); } catch (e) {}
+  }
+
+  renderAll();
+  if (DB.notes.length === 0) newNote(true);
+  else selectNote(DB.notes[0].id);
+}
+
+function normalize(d) {
+  d = d || {};
+  return {
+    version: 1,
+    sessions: (d.sessions && typeof d.sessions === 'object') ? d.sessions : {},
+    notes: Array.isArray(d.notes) ? d.notes : []
+  };
+}
+
+async function persist() {
+  if (MODE === 'file') {
+    try {
+      const r = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(DB)
+      });
+      if (!r.ok) throw new Error();
+    } catch (e) { toast('保存失败，检查服务是否还在运行'); return false; }
+  } else {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
+    catch (e) { toast('浏览器存储写入失败'); return false; }
+  }
+  return true;
+}
+
+/* ---------------- 日期工具 ---------------- */
+function dstr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+const todayStr = () => dstr(new Date());
+
+/* ---------------- 统计 ---------------- */
+function calcStreak() {
+  let n = 0;
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (!(dstr(d) in DB.sessions)) d.setDate(d.getDate() - 1); // 今天没打，从昨天往回数
+  while (dstr(d) in DB.sessions) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function totalMinutes() {
+  return Object.values(DB.sessions).reduce((a, b) => a + (Number(b) || 0), 0);
+}
+
+/* ---------------- 渲染 ---------------- */
+function renderAll() {
+  renderStats();
+  renderCheckin();
+  renderHeatmap();
+  renderList();
+}
+
+function renderStats() {
+  document.getElementById('sStreak').innerHTML = calcStreak() + '<span>天</span>';
+  document.getElementById('sDays').innerHTML = Object.keys(DB.sessions).length + '<span>天</span>';
+  const h = totalMinutes() / 60;
+  document.getElementById('sHours').innerHTML = (Math.round(h * 10) / 10) + '<span>h</span>';
+  document.getElementById('sNotes').innerHTML = DB.notes.length + '<span>篇</span>';
+}
+
+function renderCheckin() {
+  const t = todayStr();
+  const done = t in DB.sessions;
+  const btn = document.getElementById('btnCheckin');
+  const tag = document.getElementById('doneTag');
+  const hint = document.getElementById('checkinHint');
+  if (done) {
+    const m = Number(DB.sessions[t]) || 0;
+    btn.textContent = '更新今天的记录';
+    tag.hidden = false;
+    tag.textContent = '✓ 今天已打卡' + (m ? ' · ' + m + ' 分钟' : '');
+    hint.textContent = '连续 ' + calcStreak() + ' 天，保持住';
+    document.getElementById('minInput').value = m || '';
+  } else {
+    btn.textContent = '今天学了，打卡';
+    tag.hidden = true;
+    hint.textContent = '今天还没打卡';
+  }
+}
+
+function level(m) {
+  if (m === undefined) return 0;
+  if (m >= 90) return 4;
+  if (m >= 60) return 3;
+  if (m >= 30) return 2;
+  return 1;
+}
+
+function renderHeatmap() {
+  const WEEKS = 26;
+  const el = document.getElementById('heatmap');
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dows = (today.getDay() + 6) % 7;           // 0 = 周一
+  const lastMon = new Date(today); lastMon.setDate(today.getDate() - dows);
+  const firstMon = new Date(lastMon); firstMon.setDate(lastMon.getDate() - (WEEKS - 1) * 7);
+
+  let html = '';
+  for (let w = 0; w < WEEKS; w++) {
+    for (let d = 0; d < 7; d++) {
+      const cur = new Date(firstMon); cur.setDate(firstMon.getDate() + w * 7 + d);
+      if (cur > today) { html += '<div class="cell empty"></div>'; continue; }
+      const k = dstr(cur);
+      const m = DB.sessions[k];
+      const tip = k + (m === undefined ? ' 未学习' : ' 学习 ' + m + ' 分钟');
+      html += '<div class="cell l' + level(m) + '" title="' + tip + '"></div>';
+    }
+  }
+  el.innerHTML = html;
+}
+
+function renderList() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const box = document.getElementById('noteItems');
+  let list = DB.notes.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  if (q) {
+    list = list.filter(n =>
+      (n.title || '').toLowerCase().includes(q) ||
+      (n.body || '').toLowerCase().includes(q) ||
+      (n.tags || []).join(',').toLowerCase().includes(q));
+  }
+  if (list.length === 0) {
+    box.innerHTML = '<div class="empty-tip">' + (q ? '没找到匹配的笔记' : '还没有笔记<br>点右上角「＋ 新建」开始记') + '</div>';
+    return;
+  }
+  box.innerHTML = list.map(n => {
+    const sum = (n.body || '').replace(/[#*`>\-\[\]]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 46);
+    return '<div class="ni' + (n.id === curId ? ' on' : '') + '" data-id="' + n.id + '">' +
+      '<div class="t">' + esc(n.title || '未命名笔记') + '</div>' +
+      '<div class="m"><span>' + (n.date || '') + '</span>' +
+      (n.tags && n.tags.length ? n.tags.slice(0, 3).map(t => '<span class="chip">' + esc(t) + '</span>').join('') : '') +
+      '</div>' +
+      (sum ? '<div class="sum">' + esc(sum) + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+/* ---------------- 笔记编辑 ---------------- */
+function newNote(silent) {
+  const t = todayStr();
+  const n = { id: 'n' + Date.now() + Math.random().toString(36).slice(2, 6), title: '', body: '', tags: [], date: t, createdAt: Date.now(), updatedAt: Date.now() };
+  DB.notes.unshift(n);
+  persist();
+  renderList();
+  selectNote(n.id);
+  renderStats();
+  if (!silent) { document.getElementById('noteTitle').focus(); toast('已新建笔记'); }
+}
+
+function selectNote(id) {
+  curId = id;
+  const n = DB.notes.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('noteTitle').value = n.title || '';
+  document.getElementById('noteTags').value = (n.tags || []).join(', ');
+  document.getElementById('noteBody').value = n.body || '';
+  document.getElementById('noteDate').textContent = n.date ? ('创建于 ' + n.date) : '';
+  document.getElementById('saveState').textContent = '';
+  renderPreview();
+  renderList();
+}
+
+function currentNote() { return DB.notes.find(x => x.id === curId); }
+
+function queueSave() {
+  const n = currentNote();
+  if (!n) return;
+  n.title = document.getElementById('noteTitle').value;
+  n.tags = document.getElementById('noteTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  n.body = document.getElementById('noteBody').value;
+  n.updatedAt = Date.now();
+  document.getElementById('saveState').textContent = '编辑中…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const ok = await persist();
+    document.getElementById('saveState').textContent = ok ? '已保存 ✓' : '保存失败 ✗';
+    renderList();
+  }, 700);
+}
+
+function renderPreview() {
+  document.getElementById('notePreview').innerHTML = md(document.getElementById('noteBody').value);
+}
+
+function delNote() {
+  const n = currentNote();
+  if (!n) return;
+  if (!confirm('删除「' + (n.title || '未命名笔记') + '」？删了就找不回来了。')) return;
+  DB.notes = DB.notes.filter(x => x.id !== curId);
+  persist();
+  curId = null;
+  renderAll();
+  if (DB.notes.length) selectNote(DB.notes[0].id);
+  else { clearEditor(); }
+  toast('已删除');
+}
+
+function clearEditor() {
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteTags').value = '';
+  document.getElementById('noteBody').value = '';
+  document.getElementById('notePreview').innerHTML = '';
+  document.getElementById('noteDate').textContent = '';
+}
+
+/* ---------------- 迷你 Markdown 渲染 ---------------- */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function inline(t) {
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return t;
+}
+function md(src) {
+  const lines = esc(src || '').split('\n');
+  let html = '', inCode = false, buf = [], inUl = false, inOl = false;
+  const closeList = () => { if (inUl) { html += '</ul>'; inUl = false; } if (inOl) { html += '</ol>'; inOl = false; } };
+  for (const raw of lines) {
+    const line = raw;
+    if (/^```/.test(line.trim())) {
+      if (inCode) { html += '<pre><code>' + buf.join('\n') + '</code></pre>'; buf = []; inCode = false; }
+      else { closeList(); inCode = true; }
+      continue;
+    }
+    if (inCode) { buf.push(raw); continue; }
+    if (!line.trim()) { closeList(); continue; }
+    let m;
+    if ((m = line.match(/^(#{1,6})\s+(.*)$/))) { closeList(); const l = m[1].length; html += '<h' + l + '>' + inline(m[2]) + '</h' + l + '>'; continue; }
+    if ((m = line.match(/^\s*[-*+]\s+(.*)$/))) { if (!inUl) { closeList(); html += '<ul>'; inUl = true; } html += '<li>' + inline(m[1]) + '</li>'; continue; }
+    if ((m = line.match(/^\s*\d+\.\s+(.*)$/))) { if (!inOl) { closeList(); html += '<ol>'; inOl = true; } html += '<li>' + inline(m[1]) + '</li>'; continue; }
+    if (/^>\s?/.test(line)) { closeList(); html += '<blockquote>' + inline(line.replace(/^>\s?/, '')) + '</blockquote>'; continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { closeList(); html += '<hr>'; continue; }
+    closeList();
+    html += '<p>' + inline(line) + '</p>';
+  }
+  if (inCode) html += '<pre><code>' + buf.join('\n') + '</code></pre>';
+  closeList();
+  return html || '<p style="color:var(--faint)">左边写点什么，这里会实时显示效果。</p>';
+}
+
+/* ---------------- 备份 ---------------- */
+function download(name, text, type) {
+  const blob = new Blob([text], { type: type || 'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+
+/* ---------------- 事件绑定 ---------------- */
+document.getElementById('btnCheckin').onclick = async () => {
+  const m = parseInt(document.getElementById('minInput').value, 10);
+  DB.sessions[todayStr()] = isNaN(m) ? 0 : Math.max(0, m);
+  const ok = await persist();
+  renderStats(); renderCheckin(); renderHeatmap();
+  if (ok) toast((isNaN(m) ? '已打卡' : '已记录 ' + m + ' 分钟') + ' · 连续 ' + calcStreak() + ' 天');
+};
+
+document.querySelectorAll('.quick button').forEach(b => {
+  b.onclick = () => { document.getElementById('minInput').value = b.dataset.min; };
+});
+
+document.getElementById('btnNew').onclick = () => newNote(false);
+
+document.getElementById('noteItems').onclick = e => {
+  const el = e.target.closest('.ni');
+  if (el) selectNote(el.dataset.id);
+};
+
+document.getElementById('search').oninput = renderList;
+
+['noteTitle', 'noteTags', 'noteBody'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { queueSave(); if (id === 'noteBody') renderPreview(); });
+});
+
+document.getElementById('btnDelete').onclick = delNote;
+
+document.getElementById('btnSplit').onclick = () => {
+  const sh = document.getElementById('edShell');
+  sh.classList.toggle('split');
+  document.getElementById('btnSplit').textContent = sh.classList.contains('split') ? '隐藏预览' : '分栏预览';
+};
+
+document.getElementById('btnExport').onclick = () => {
+  download('python学习数据_' + todayStr() + '.json', JSON.stringify(DB, null, 2));
+  toast('备份已下载，建议放进 python-learning 目录一起 git 提交');
+};
+
+document.getElementById('btnImport').onclick = () => document.getElementById('fileImport').click();
+
+document.getElementById('fileImport').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = async () => {
+    try {
+      const d = JSON.parse(fr.result);
+      if (!confirm('导入会覆盖当前数据，确定？')) return;
+      DB = normalize(d);
+      await persist();
+      renderAll();
+      if (DB.notes.length) selectNote(DB.notes[0].id); else clearEditor();
+      toast('导入成功');
+    } catch (err) { toast('文件格式不对'); }
+  };
+  fr.readAsText(f, 'utf-8');
+  e.target.value = '';
+};
+
+document.getElementById('btnExportMd').onclick = () => {
+  if (!DB.notes.length) return toast('还没有笔记');
+  const sorted = DB.notes.slice().sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  let out = '# Python 学习笔记\n\n> 导出时间：' + new Date().toLocaleString('zh-CN') + '\n\n';
+  sorted.forEach(n => {
+    out += '## ' + (n.title || '未命名笔记') + '\n\n';
+    out += '`' + (n.date || '') + '`' + ((n.tags && n.tags.length) ? ' 标签：' + n.tags.join('、') : '') + '\n\n';
+    out += (n.body || '') + '\n\n---\n\n';
+  });
+  out += '\n## 学习打卡记录\n\n| 日期 | 时长(分钟) |\n|---|---|\n';
+  Object.keys(DB.sessions).sort().forEach(k => { out += '| ' + k + ' | ' + DB.sessions[k] + ' |\n'; });
+  download('Python学习笔记_' + todayStr() + '.md', out, 'text/markdown;charset=utf-8');
+  toast('已导出 Markdown');
+};
+
+// Ctrl+S 手动保存
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    const n = currentNote();
+    if (n) { queueSave(); }
+  }
+});
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+document.getElementById('todayChip').textContent = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+init();
+</script>
+</body>
+</html>
