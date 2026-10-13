@@ -122,37 +122,137 @@ git push                           # 推到 GitHub
 
 ## 网络问题（国内必须知道）
 
-### github.com 打不开怎么办
+### github.com 打不开怎么办（2026-10-13 最终结论）
 
-**2026-10-13 实测结论：你的 DNS 是好的，坏的是它返回的那个 IP。**
+**结论先说：你这网络对 `github.com` 是「域名级」阻断 —— 换 hosts 里的 IP 修不好，别再折腾了。**
 
-排查过程（用 `check_github.py` 直连测试，绕开浏览器缓存）：
+证据：连**同一台** GitHub 服务器 `20.27.177.113`，只改 TLS 握手里的域名：
 
-| 域名 | DNS 解析到的 IP | 能否连通 |
+| TLS 里带的域名（SNI） | 结果 |
+| --- | --- |
+| `github.com` | ❌ 超时 |
+| `api.github.com` | ✓ **301（0.37 秒）** |
+
+同一个 IP、同一台机器，**只因为域名不同，一个死一个活** → 中间拦的是**域名**，不是 IP。所以：
+
+- ❌ 改 DNS → 没用
+- ❌ 换 hosts 里的 IP → 没用（换哪台 GitHub 服务器都是这个域名）
+- ✅ **开雷神加速器** → 唯一稳的解法
+
+网络本身没问题（同时实测：百度 0.07 秒、Bing 0.26 秒、`api.github.com` 0.42 秒，全通）。
+
+**所以：浏览器打不开 github.com，别修 hosts，直接开加速器。**
+
+**开加速器之前先把 hosts 清干净** —— 双击桌面「**还原hosts.bat**」→ 点「是」。
+（hosts 里那条过期记录会跟加速器打架）
+
+**那「修复github打不开.bat」还有啥用？** 有，但只限一种情况：**github.com
+能连上、却打不开网页或慢得离谱**（拿到 403、或者 TCP 通但收不到响应）。
+那时候换 IP 有意义。**如果所有节点都连不上，跑它也没用，直接开加速器。**
+
+### GitHub 有两条通道在你这里是通的（重要）
+
+| 通道 | 你这里的实测状态 |
+| --- | --- |
+| `api.github.com`（API） | ✓ 通 |
+| `ssh.github.com:443` / `:22`（SSH 推代码） | ✓ 通 |
+| `github.com`（网页 + HTTPS 推代码） | ❌ 被阻断 |
+
+**含义**：只要配好 SSH key，以后 `git push` 走 `ssh.github.com:443`，
+**不开加速器也能推代码**。配 SSH key 需要登录一次网页（那次开加速器即可）。
+
+### 永久通道：SSH（2026-10-13 已给你配好）
+
+我已经在你的电脑上做好了这三件事：
+
+| 已完成 | 位置 |
+| --- | --- |
+| 生成 SSH 密钥对 | `C:\Users\13377\.ssh\id_ed25519`（私钥，**绝不外传**）+ 同名 `.pub`（公钥） |
+| 配好 443 端口转发 | `C:\Users\13377\.ssh\config` —— 让 `git@github.com` 自动走 `ssh.github.com:443` |
+| 本地仓库远端设为 SSH | `origin = git@github.com:halen-cpu/python-learning.git` |
+
+**你只差一步**：把下面这串**公钥**贴到 GitHub（开加速器登录网页后操作）：
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGYcA8DiMIEPKerhztiqUQX55SWg6SuKPlF53ZYwsFS6 13377618515@189.cn
+```
+
+路径：**github.com → 右上角头像 → Settings → SSH and GPG keys → New SSH key**
+→ Title 随便填（比如「我的笔记本」）→ Key 粘贴上面那串 → **Add SSH key**
+
+**怎么验证成没成**：在桌面「Git Bash」里敲 `ssh -T git@github.com`
+→ 看到 `Hi halen-cpu! You've successfully authenticated...` 就成了
+→ 看到 `Permission denied (publickey)` = 公钥还没加上去
+
+**好处**：配好之后 `git push` / `git pull` **不用开加速器**，只有打开网页才需要。
+
+### 看到「本网站访问受限，请联系客服」怎么办
+
+**那不是被封，是 GitHub 的限流页。** 英文原文：
+
+> Access has been restricted — You have triggered a rate limit. Please wait a few minutes
+> before you try again; in some cases this may take up to an hour.
+> Contact Support — GitHub Status — **@githubstatus**
+
+（中文翻译过来就是「本网站访问受限 / 请联系客服 / GitHub状态」）
+
+**触发原因**：短时间内对 GitHub 的请求太多。GitHub 按「来源 IP」计数，超了就把这个 IP 临时关一段时间。
+常见诱因：反复刷新页面、反复重发验证邮件、脚本反复探测。
+
+**怎么办：**
+
+1. **停手，别再刷。** 越刷恢复越慢。
+2. 等 **10～60 分钟**，再打开 github.com。
+3. 想快一点 → **重启光猫/路由器**，宽带重新拨号拿到新 IP。
+4. 或者直接**开雷神加速器**，换一条出口。
+
+**注意：限流是按你家宽带这个 IP 算的，换 hosts 里那个 GitHub 节点 IP 没用。**
+
+### 别访问 github.com/signup
+
+`/signup` 是**注册新账号**的页面，会触发 GitHub 的反爬校验，容易返回 403（页面写着
+`Please enable JS and disable any ad blocker`）。**你已经有账号了，完全不需要它。**
+
+**要建新仓库，去 `github.com/new`。**
+
+### 雷神加速器能加速浏览器吗？（2026-10-13 实测）
+
+**结论：默认不能。** 这不是你设置错了，是它本来就不管浏览器。
+
+雷神是**游戏**加速器，按「**进程白名单**」工作 —— 只截获它支持的那些游戏程序的流量，
+**浏览器根本不在名单里**。官方原话：加速器仅对目标游戏可执行程序重定向流量，
+本地浏览器、下载软件等**依然走原生公网网关**。
+
+在你这台机器上实测到的证据：
+
+| 检查项 | 结果 | 说明 |
 | --- | --- | --- |
-| **github.com** | 20.205.243.166 | ❌ 连不上 |
-| api.github.com | 20.205.243.168 | ✓ |
-| codeload.github.com | 20.205.243.165 | ✓ |
-| github.githubassets.com | 185.199.109.215 | ✓ |
+| 雷神进程 | 5 个在跑 | 加速器确实开着 |
+| 虚拟网卡 | **没有**（只有一块物理网卡） | 它没接管全系统流量 |
+| 系统代理 | `ProxyEnable = 0` | 没给系统设代理 |
 
-所以 **改 DNS 没用，换 hosts 才有用**。
+→ **所以你之前「开着雷神也打不开 github.com」，不是你没设置好，是雷神压根没管浏览器的流量。**
 
-**一键修复：双击桌面上的「修复github打不开.bat」，弹窗点「是」授予管理员权限。**
+**如果一定要让浏览器也走加速器**：
 
-脚本做的事：备份原 hosts → 把 github.com 指向可用 IP `20.200.245.247` → 刷新 DNS 缓存。
+雷神 → 右上角**三条横线** → **设置中心** → 左侧**加速设置** → **加速模式选择**
+→ 选「**虚拟网卡模式**」→ 按提示**重启加速器**。
 
-修复后如果浏览器还是打不开，**完全关掉浏览器再重开**（不是刷新，是彻底退出）。
+这个模式会接管全系统流量（含浏览器）。**但不保证能打开 github.com** ——
+雷神的专线是给游戏服务器铺的，不保证顺路带你去 GitHub。
 
-**以后又打不开了怎么办**：重跑一次这个脚本。如果重跑也没用，说明那个 IP 也失效了，跑一下
-`python check_github.py` 找当前可用的 IP，自己改 hosts 里那一行。
+**更靠谱的做法（按推荐顺序）**
 
-**想还原**：把 `C:\Windows\System32\drivers\etc\hosts.backup` 改名回 `hosts` 即可。
+1. **手机热点**（最省事）：手机开热点 → 电脑连上 → 打开 github.com。
+   手机流量一般没有这道域名阻断。
+2. **趁现在能用就用**：本网络对 github.com **时通时断**，能打开的窗口期里赶紧把事办完。
+3. 换用专门做「网页加速」的工具 —— 雷神不是这一类。
 
 ### 其他网络常识
 
 - 下载 GitHub 上的 release 文件：**经常超时**，这是正常现象，不是你的问题
 - `raw.githubusercontent.com` 实测不通（这个 hosts 也救不了，得靠加速器）
-- 你有雷神加速器，需要下载大文件时可以开着它
+- **别对 github.com 密集探测/反复刷新** —— 会把你的宽带 IP 打进限流
 
 ---
 
