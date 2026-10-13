@@ -243,10 +243,43 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGYcA8DiMIEPKerhztiqUQX55SWg6SuKPlF53ZYwsFS6
 
 **更靠谱的做法（按推荐顺序）**
 
-1. **手机热点**（最省事）：手机开热点 → 电脑连上 → 打开 github.com。
+1. **直接用手机办**（最省事，不折腾电脑）—— 见下一节
+2. **手机开热点给电脑**：手机开热点 → 电脑连上 → 打开 github.com。
    手机流量一般没有这道域名阻断。
-2. **趁现在能用就用**：本网络对 github.com **时通时断**，能打开的窗口期里赶紧把事办完。
-3. 换用专门做「网页加速」的工具 —— 雷神不是这一类。
+3. **趁窗口期办**：本网络对 github.com **时通时断**（实测：23:16 通，23:22 断），
+   能打开的窗口里赶紧把事办完。
+4. 换用专门做「网页加速」的工具 —— 雷神不是这一类。
+
+### 手机端操作清单（电脑打不开时的兜底）
+
+**电脑打不开 github.com 时，别在电脑上死磕。用手机 5 分钟办完。**
+
+手机能上网就行（流量或另一个 Wi-Fi），不需要连电脑。
+
+**第 1 步**　手机浏览器打开 `github.com`，登录你的账号（`halen-cpu`）
+
+**第 2 步（建仓库）**　地址栏直接输 `github.com/new`
+
+| 填什么 | 值 |
+| --- | --- |
+| Repository name | `python-learning` |
+| 下面的勾选项 | **README / .gitignore / license 三个全部不勾** |
+
+→ 点 **Create repository**
+
+**第 3 步（贴公钥）**　右上角头像 → **Settings** → 左侧 **SSH and GPG keys**
+→ **New SSH key** → Title 随便填（比如「我的笔记本」）→ Key 框里粘**这一整行**：
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGYcA8DiMIEPKerhztiqUQX55SWg6SuKPlF53ZYwsFS6 13377618515@189.cn
+```
+
+→ 点 **Add SSH key**
+
+> 粘的时候别漏字符、别多空格。从 `ssh-ed25519` 一直到邮箱结尾，是一整串。
+
+**做完这两步，电脑上的 `git push` 就能用了** —— push 走 SSH 通道（`ssh.github.com:443`），
+**不需要网页**，所以以后推代码再也不会被这道墙挡住。
 
 ### 其他网络常识
 
