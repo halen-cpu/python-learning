@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>广州买房压力测算器 · 侯ii 个人项目</title>
+<style>
+  :root{
+    --bg:#f4f7fc; --card:#ffffff; --line:#e4eaf4; --line2:#d3dcec;
+    --text:#1b2436; --muted:#7b889f; --faint:#a9b4c7;
+    --primary:#3b6ef5; --primary-d:#2c58d6; --primary-soft:#eaf0ff;
+    --green:#12b886; --orange:#ff8a3d; --red:#ef4d4d; --amber:#f59f00;
+    --r:14px; --mono:"Cascadia Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);
+    font:14px/1.65 -apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1200px;margin:0 auto;padding:22px 26px 70px}
+
+  header{display:flex;align-items:center;gap:13px;padding:6px 0 18px;flex-wrap:wrap}
+  .brand{font-size:20px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .brand .ico{width:29px;height:29px;border-radius:9px;background:#3b6ef5;color:#fff;
+    display:grid;place-items:center;font-size:15px}
+  .brand small{font-weight:500;font-size:12.5px;color:var(--muted)}
+  .stamp{margin-left:auto;font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);
+    padding:6px 12px;border-radius:20px}
+  .srcbar{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;
+    font-size:12.5px;color:#92400e;margin-bottom:16px;line-height:1.7}
+  .srcbar a{color:#92400e}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
+  .card-hd{font-weight:650;font-size:14.5px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .card-hd .sub{font-weight:400;font-size:12.5px;color:var(--muted)}
+
+  /* 输入区 */
+  .inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:16px 22px}
+  .fld label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  .fld .row{display:flex;align-items:center;gap:8px}
+  .fld input[type=number]{width:118px;padding:8px 11px;border:1px solid var(--line2);border-radius:9px;
+    font-size:14px;font-variant-numeric:tabular-nums}
+  .fld input[type=range]{flex:1;min-width:80px;accent-color:var(--primary)}
+  .fld input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,110,245,.12)}
+  .fld .val{font-family:var(--mono);font-size:12.5px;color:var(--primary-d);min-width:62px;text-align:right;
+    font-variant-numeric:tabular-nums}
+  select{width:100%;padding:8px 11px;border:1px solid var(--line2);border-radius:9px;font-size:14px;background:#fff}
+  select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(59,110,245,.12)}
+
+  /* 结论条 */
+  .verdict{border-radius:12px;padding:16px 18px;margin-bottom:16px;border:1px solid}
+  .verdict h3{margin:0 0 6px;font-size:15.5px;font-weight:650}
+  .verdict p{margin:0;font-size:13.5px;line-height:1.75}
+  .v-ok{background:#e8f8f2;border-color:#c6ecdd;color:#0b6b4f}
+  .v-warn{background:#fff8ec;border-color:#ffe0b8;color:#8a5200}
+  .v-bad{background:#fdecec;border-color:#f7c4c4;color:#a12b2b}
+
+  /* 核心数字 */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px}
+  .kpi .n{font-size:27px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+  .kpi .n span{font-size:13px;font-weight:600;color:var(--muted);margin-left:2px}
+  .kpi .l{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .kpi.blue .n{color:var(--primary)} .kpi.green .n{color:var(--green)}
+  .kpi.orange .n{color:var(--orange)} .kpi.red .n{color:var(--red)}
+
+  /* 表格 */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  th{font-size:12px;color:var(--muted);font-weight:600;background:#fafbfe;position:sticky;top:0}
+  th:first-child,td:first-child{text-align:left;font-weight:600}
+  th:nth-child(2),td:nth-child(2){text-align:left;font-weight:400}
+  tbody tr:hover{background:#fafbff}
+  tbody tr.pick{background:var(--primary-soft)}
+  tbody tr.ok td:nth-child(5){color:var(--green);font-weight:650}
+  tbody tr.tight td:nth-child(5){color:var(--orange);font-weight:650}
+  tbody tr.over td:nth-child(5){color:var(--red);font-weight:650}
+  .tbl-scroll{max-height:560px;overflow-y:auto;border:1px solid var(--line);border-radius:10px}
+
+  /* 条形 */
+  .bar-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+  .bar{height:8px;background:var(--primary);border-radius:4px;min-width:2px}
+
+  /* 提示块 */
+  .note{background:#fafbfe;border:1px solid var(--line);border-left:3px solid var(--primary);
+    border-radius:8px;padding:11px 14px;font-size:12.5px;color:var(--muted);line-height:1.8;margin-top:12px}
+  .note b{color:var(--text)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:860px){.two{grid-template-columns:1fr}}
+  footer{text-align:center;color:var(--faint);font-size:12px;padding:26px 0 0;line-height:1.9}
+  .tag{display:inline-block;background:#eef2f9;color:var(--muted);border-radius:6px;padding:1px 7px;font-size:11px;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand"><div class="ico">房</div>广州买房压力测算器<small>· 侯ii 个人项目 01</small></div>
+  <div class="stamp">数据截至 2026-10 · 真实公开数据</div>
+</header>
+
+<div class="srcbar">
+  <b>数据来源（可点开核对）：</b>
+  房价 58同城广州二手房均价（2026-10 各区）· 全市均价 27,315 元/㎡；
+  利率 中行/工行/建行/邮储 广州首套 <b>3.0%</b>（LPR-50BP），公积金首套 5年以上 <b>2.6%</b>，渣打/汇丰低至 <b>2.7%</b>；
+  5年期以上 LPR <b>3.5%</b>，已连续 16 个月不变（2026-09-20 报价）。
+</div>
+
+<!-- 结论 -->
+<div id="verdict" class="verdict v-warn">
+  <h3 id="vTitle">先调参数看看</h3>
+  <p id="vBody">拖动下面的滑块，看看以你现在的收入水平，广州哪个区够得着。</p>
+</div>
+
+<!-- 输入 -->
+<div class="card">
+  <div class="card-hd">你的情况 <span class="sub">全部可调，改数字实时重算</span></div>
+  <div class="inputs">
+    <div class="fld">
+      <label>税后月收入（元）</label>
+      <div class="row"><input type="range" id="income" min="4000" max="50000" step="500" value="12000">
+        <span class="val" id="incomeV">12000</span></div>
+    </div>
+    <div class="fld">
+      <label>手头首付（万元）</label>
+      <div class="row"><input type="range" id="down" min="0" max="200" step="5" value="30">
+        <span class="val" id="downV">30</span></div>
+    </div>
+    <div class="fld">
+      <label>目标面积（㎡）</label>
+      <div class="row"><input type="range" id="area" min="30" max="200" step="5" value="89">
+        <span class="val" id="areaV">89</span></div>
+    </div>
+    <div class="fld">
+      <label>贷款年限</label>
+      <div class="row"><input type="range" id="years" min="10" max="30" step="5" value="30">
+        <span class="val" id="yearsV">30</span></div>
+    </div>
+    <div class="fld">
+      <label>贷款利率</label>
+      <select id="rate">
+        <option value="0.030">商贷 3.0%（主流首套，广州）</option>
+        <option value="0.027">商贷 2.7%（渣打/汇丰特惠，门槛高）</option>
+        <option value="0.026">公积金 2.6%（首套 5年以上）</option>
+        <option value="0.031">商贷 3.1%（部分银行上浮）</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>月供收入比红线</label>
+      <div class="row"><input type="range" id="ratio" min="30" max="60" step="1" value="40">
+        <span class="val" id="ratioV">40%</span></div>
+    </div>
+  </div>
+  <div class="note">
+    <b>月供收入比</b>是银行批贷的核心指标。行业惯例：≤30% 安全，30–40% 可接受但有压力，&gt;40% 危险。
+    超过红线你自己睡不好，银行也可能压你首付比例。红线可以按自己的抗风险能力调。
+  </div>
+</div>
+
+<!-- KPI -->
+<div class="kpis">
+  <div class="kpi blue"><div class="n" id="kAfford">—</div><div class="l">够得着的最贵区</div></div>
+  <div class="kpi orange"><div class="n" id="kPay">—</div><div class="l">该区月供（元）</div></div>
+  <div class="kpi green"><div class="n" id="kRatio">—</div><div class="l">月供 / 收入</div></div>
+  <div class="kpi"><div class="n" id="kNeed">—</div><div class="l">首付缺口（万元）</div></div>
+</div>
+
+<!-- 表格 -->
+<div class="card">
+  <div class="card-hd">11 区全表 <span class="sub">按月供压力排序 · 绿色=安全，橙色=吃紧，红色=超红线</span></div>
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr>
+        <th>区</th><th>均价(元/㎡)</th><th>总价(万)</th><th>需首付(万)</th><th>月供(元)</th><th>压力</th><th style="width:130px">总价对比</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="note">
+    总价 = 均价 × 面积。首付按 <b id="ratioNote">30</b>% 计（广州首套常见最低首付比例，非商业贷款常见三成），
+    利率取上面下拉框选的值。等额本息，月供 = <code>本金×r(1+r)ⁿ / ((1+r)ⁿ−1)</code>。
+    房价数据是<b>挂牌均价</b>，实际成交会低 5–10%，且不同小区差异极大，这里只做量级判断。
+  </div>
+</div>
+
+<div class="two">
+  <div class="card">
+    <div class="card-hd">攒首付要多久</div>
+    <div id="saveBox"></div>
+    <div class="note">按你当前收入的一个比例存钱，到目标首付需要多久。比例自己定，别硬撑——留出生活费和应急金。</div>
+  </div>
+  <div class="card">
+    <div class="card-hd">这套工具说明什么</div>
+    <div style="font-size:13px;line-height:1.9;color:var(--muted)">
+      <b style="color:var(--text)">它不是算命，是给你一个锚。</b><br>
+      广州市中心（越秀/天河）均价 5 万/㎡ 上下，一套 89㎡ 的小三房总价 450 万上下。
+      首付 135 万，月供约 1.9 万——这个数字对着大一的你可能毫无实感，但它是你未来 10 年真实的锚。<br><br>
+      越秀天河不是不能买，是<b>现在买不起</b>。番禺/黄埔/白云 2.3–2.9 万/㎡ 的区间，
+      是「普通金融行业工作三五年后可能够得着」的现实位置。<br><br>
+      <b>看区不是看均价，是看月供和你的收入比。</b>这套工具唯一的作用就是让这个比值永远摆在你面前。
+    </div>
+  </div>
+</div>
+
+<footer>
+  数据来源：58同城广州二手房均价网、凤凰网房产广州（2026-10）<br>
+  利率数据：2026-09-20 LPR 报价 + 广州各银行网点口径，办理前请以银行实际审批为准<br>
+  项目仓库：github.com/halen-cpu/python-learning · 广东金融学院金融科技专业
+</footer>
+
+</div>
+
+<script>
+// 2026-10 广州各区二手挂牌均价（元/㎡）—— 来源 58同城广州二手房均价网
+const DATA = [
+  {d:"越秀区", p:51766, core:true },
+  {d:"天河区", p:49473, core:true },
+  {d:"海珠区", p:39423},
+  {d:"荔湾区", p:36459},
+  {d:"白云区", p:27114},
+  {d:"黄埔区", p:24354},
+  {d:"番禺区", p:23238},
+  {d:"南沙区", p:14717},
+  {d:"花都区", p:12730},
+  {d:"增城区", p:10251},
+  {d:"从化区", p:8939 }
+];
+const CITY = 27315; // 广州全市二手均价
+
+function monthly(principal, annualRate, years){
+  const n = years*12;
+  if(n<=0) return 0;
+  const r = annualRate/12;
+  if(r===0) return principal/n;
+  const f = Math.pow(1+r, n);
+  return principal*r*f/(f-1);
+}
+
+function state(){
+  return {
+    income:+document.getElementById('income').value,
+    down:+document.getElementById('down').value*10000,
+    area:+document.getElementById('area').value,
+    years:+document.getElementById('years').value,
+    rate:+document.getElementById('rate').value,
+    ratio:+document.getElementById('ratio').value/100,
+    dpRatio:0.30
+  };
+}
+
+function calc(){
+  const s=state();
+  const maxPay = s.income*s.ratio;
+  const list = DATA.map(x=>{
+    const total = x.p*s.area;
+    const needDown = total*s.dpRatio;
+    const loan = Math.max(0, total-needDown);
+    const pay = monthly(loan, s.rate, s.years);
+    const gap = Math.max(0, needDown - s.down);
+    return {...x, total, needDown, loan, pay, ratio:s.income>0?pay/s.income:99, gap,
+            ok:s.income>0 && pay<=maxPay, tight:s.income>0 && pay<=maxPay*1.15};
+  });
+  list.sort((a,b)=>a.pay-b.pay);
+  return {s, list};
+}
+
+function render(){
+  const {s,list}=calc();
+
+  // 标签
+  document.getElementById('incomeV').textContent=s.income.toLocaleString();
+  document.getElementById('downV').textContent=(s.down/10000)+'万';
+  document.getElementById('areaV').textContent=s.area+'㎡';
+  document.getElementById('yearsV').textContent=s.years+'年';
+  document.getElementById('ratioV').textContent=Math.round(s.ratio*100)+'%';
+  document.getElementById('ratioNote').textContent=Math.round(s.dpRatio*100);
+
+  const affordable = list.filter(x=>x.ok);
+  const best = affordable.length?affordable[affordable.length-1]:null;
+
+  // KPI
+  document.getElementById('kAfford').innerHTML = best? best.d : '无';
+  document.getElementById('kPay').textContent = best? Math.round(best.pay).toLocaleString() : '—';
+  document.getElementById('kRatio').innerHTML = best? (best.ratio*100).toFixed(1)+'<span>%</span>' : '—';
+  document.getElementById('kNeed').innerHTML = best? (best.gap/10000).toFixed(0)+'<span>万</span>' : '—';
+
+  // 结论
+  const v=document.getElementById('verdict');
+  const t=document.getElementById('vTitle'), b=document.getElementById('vBody');
+  if(!best){
+    v.className='verdict v-bad';
+    const cheapest=list[0];
+    t.textContent='当前条件下广州 11 区都够不着';
+    b.innerHTML='最便宜的'+cheapest.d+'（'+cheapest.d+' '+cheapest.total.toFixed(0)+' 万）也要月供 '
+      + Math.round(cheapest.pay).toLocaleString()+' 元，是你月收入的 '
+      + (cheapest.ratio*100).toFixed(0)+'%，超过你设的 '+(s.ratio*100)+'% 红线。<br>'
+      + '要动的是<b>首付</b>和<b>面积</b>，不是收入。把首付往上拉，或把面积往下压，再看一次。';
+  }else{
+    v.className = best.tight? 'verdict v-warn':'verdict v-ok';
+    const next=list[list.indexOf(best)+1];
+    t.textContent = '以 '+s.income.toLocaleString()+' 元月薪，你现在够得着 '+best.d;
+    let extra = (best.tight? '月供已经占到收入的 '+(best.ratio*100).toFixed(1)+'%，处在「吃紧」区间，别再加别的负债（车贷、消费贷）进来。'
+                                : '月供占收入 '+(best.ratio*100).toFixed(1)+'%，安全区间，可以适度消费。');
+    if(next) extra += '<br>再往上够一档（'+next.d+'）需要月供 '+Math.round(next.pay).toLocaleString()
+      +' 元（收入比 '+(next.ratio*100).toFixed(0)+'%），先降 '+next.d+'，还是先等收入涨？自己判断。';
+    b.innerHTML = '总价 '+best.total.toFixed(0)+' 万，首付需 '+best.needDown.toFixed(0)
+      +' 万（你手头 '+(s.down/10000).toFixed(0)+' 万'+(best.gap>0?'，还差 '+best.gap.toFixed(0)+' 万':'')
+      +'），月供 '+Math.round(best.pay).toLocaleString()+' 元。'+extra;
+  }
+
+  // 表格
+  const maxTotal=Math.max(...list.map(x=>x.total));
+  const tb=document.getElementById('rows');
+  tb.innerHTML = list.map(x=>{
+    const cls = x.ok ? (x.tight?'tight':'ok') : 'over';
+    const w = Math.max(2, Math.round(x.total/maxTotal*118));
+    const star = x.core? '<span class="tag">核心区</span>' : '';
+    return '<tr class="'+cls+'"><td>'+x.d+star+'</td><td>'+x.p.toLocaleString()+'</td><td>'
+      +x.total.toFixed(0)+'</td><td>'+x.needDown.toFixed(0)+'</td><td>'
+      +Math.round(x.pay).toLocaleString()+'</td><td>'+(x.ok?(x.tight?'吃紧':'安全'):'超红线')
+      +'</td><td><div class="bar-cell"><span>'+x.total.toFixed(0)+'万</span>'
+      +'<div class="bar" style="width:'+w+'px;background:'+(x.ok?'var(--green)':'var(--red)')+'"></div>'
+      +'</div></td></tr>';
+  }).join('');
+
+  // 攒钱测算
+  const target = best? best.needDown : list[0].needDown;
+  const saveBox=document.getElementById('saveBox');
+  let html='<div style="font-size:13px;line-height:2;color:var(--muted)">目标首付：<b style="color:var(--text);font-size:16px">'
+    + target.toFixed(0)+' 万</b>'+(best&&best.gap>0?'（还差 '+best.gap.toFixed(0)+' 万）':'（已够）')+'</div>';
+  const rates=[0.1,0.15,0.2,0.25,0.3];
+  html+='<table style="margin-top:12px"><thead><tr><th>月存比例</th><th>月存(元)</th><th>需要时间</th></tr></thead><tbody>';
+  rates.forEach(r=>{
+    const per = s.income*r;
+    const need = Math.max(0, target-s.down);
+    const months = per>0? Math.ceil(need/per):Infinity;
+    let t;
+    if(need<=0) t='已达成';
+    else if(!isFinite(months)) t='—';
+    else if(months<=60) t=(months/12).toFixed(1)+' 年 ('+months+' 个月)';
+    else t='超过 '+(months/12).toFixed(1)+' 年';
+    html+='<tr><td>'+Math.round(r*100)+'%</td><td>'+Math.round(per).toLocaleString()+'</td><td>'+t+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  saveBox.innerHTML=html;
+}
+
+['income','down','area','years','ratio','rate'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',render);
+});
+render();
+</script>
+</body>
+</html>
